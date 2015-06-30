@@ -1,7 +1,8 @@
 #!/usr/local/bin/bash
 #
-# Author:: Sebastien Badia (<seb@sebian.fr>)
+# Author:: Sebian
 # Date:: 2014-02-13 04:01:56 +0100
+# Contact:: Gitoyen -- http://gitoyen.net/Contact
 
 if [[ "x${DEBUG}" == "x1" ]]; then
   set -e
@@ -10,17 +11,25 @@ fi
 
 hostname=$(hostname -s)
 case $hostname in
-  "zoulou")
-    BGPNEIGHBOR="212.85.148.109"
+  "whiskey")
+    BGPNEIGHBOR="79.143.245.137"
+    DAEMON="bird"
+    ;;
+  "x-ray")
+    BGPNEIGHBOR=""
+    DAEMON="quagga"
     ;;
   "yankee")
     BGPNEIGHBOR="80.231.79.69"
+    DAEMON="quagga"
     ;;
-  "x-ray")
-    BGPNEIGHBOR="79.143.245.137"
+  "zoulou")
+    BGPNEIGHBOR="212.85.148.109"
+    DAEMON="quagga"
     ;;
   "grimoire")
     BGPNEIGHBOR="1.1.1.1"
+    DAEMON="bird"
     ;;
   *)
     echo "Unknow router"
@@ -85,26 +94,35 @@ if [[ "$action" == "add" ]]; then
     exit 1
   fi
   echo "Adding $net to blackhole:"
-  # then to the router blackhole :
-  vtysh -d bgpd -c "conf t" -c "router bgp 20766" -c "network $net route-map blackhole"
-  # then clear the out announce to our transit :
-  vtysh -d bgpd -c "clear ip bgp $BGPNEIGHBOR soft out"
-  #vtysh -d zebra -c "conf t" -c "ip route $net 127.0.0.1 blackhole"
+  if [ "${DAEMON}" = "quagga" ]; then
+    # then to the router blackhole :
+    vtysh -d bgpd -c "conf t" -c "router bgp 20766" -c "network $net route-map blackhole"
+    # then clear the out announce to our transit :
+    vtysh -d bgpd -c "clear ip bgp $BGPNEIGHBOR soft out"
+    #vtysh -d zebra -c "conf t" -c "ip route $net 127.0.0.1 blackhole"
+  fi
   route add $net 127.0.0.1 -blackhole
 elif [[ "$action" == "del" ]]; then
   echo "Removing $net from blackhole:"
-  # then to the router blackhole :
-  vtysh -d bgpd -c "conf t" -c "router bgp 20766" -c "no network $net"
-  # then clear the out announce to our transit :
-  vtysh -d bgpd -c "clear ip bgp $BGPNEIGHBOR soft out"
-  #vtysh -d zebra -c "conf t" -c "no ip route $net 127.0.0.1 blackhole"
+  if [ "${DAEMON}" = "quagga" ]; then
+    # then to the router blackhole :
+    vtysh -d bgpd -c "conf t" -c "router bgp 20766" -c "no network $net"
+    # then clear the out announce to our transit :
+    vtysh -d bgpd -c "clear ip bgp $BGPNEIGHBOR soft out"
+    #vtysh -d zebra -c "conf t" -c "no ip route $net 127.0.0.1 blackhole"
+  fi
   route del $net 127.0.0.1 -blackhole
 elif [[ "$action" == "list" ]]; then
-  echo Those networks are black-holed by BGPD:
-  vtysh -d bgpd -c 'show run' | grep 'network .* route-map blackhole' | awk '{print $2}'
-  echo Those networks are black-holed by ZEBRA via kernel:
-  vtysh -c 'sh ip route kernel' | grep 'lo0, bh' | awk '{print $2}'
-  vtysh -c 'sh ip route static' | grep 'lo0, bh' | awk '{print $2}'
+  if [ "${DAEMON}" = "quagga" ]; then
+    echo Those networks are black-holed by BGPD:
+    vtysh -d bgpd -c 'show run' | grep 'network .* route-map blackhole' | awk '{print $2}'
+    echo Those networks are black-holed by ZEBRA via kernel:
+    vtysh -c 'sh ip route kernel' | grep 'lo0, bh' | awk '{print $2}'
+    vtysh -c 'sh ip route static' | grep 'lo0, bh' | awk '{print $2}'
+  else
+    echo Those networks are black-holed by kernel:
+    netstat -nr|grep UGSB
+  fi
 else
   echo "Action  problem"
   exit 1
