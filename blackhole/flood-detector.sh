@@ -26,6 +26,9 @@ case $hostname in
   "grimoire")
     IFACE="eth0"
     ;;
+  "whiskey")
+    IFACE="lagg0.3012"
+    ;;
   *)
     echo "Unknown router"
     exit 1
