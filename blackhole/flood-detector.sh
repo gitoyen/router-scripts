@@ -15,19 +15,22 @@ fi
 hostname=$(hostname -s)
 case $hostname in
   "zoulou")
-    IFACE="em1.109"
+    IFACE="ix0.109"
     ;;
   "yankee")
     IFACE="em0.179"
     ;;
   "x-ray")
-    IFACE="em0.3012"
+    IFACE="ix0.115"
     ;;
   "grimoire")
     IFACE="eth0"
     ;;
   "whiskey")
-    IFACE="lagg0.3012"
+    IFACE="ix0.3012"
+    ;;
+  "vodka")
+    IFACE="ix0.110"
     ;;
   *)
     echo "Unknown router"

@@ -11,13 +11,17 @@ fi
 
 hostname=$(hostname -s)
 case $hostname in
+  "vodka")
+    BGPNEIGHBOR=""
+    DAEMON="bird"
+    ;;
   "whiskey")
-    BGPNEIGHBOR="79.143.245.137"
+    BGPNEIGHBOR=""
     DAEMON="bird"
     ;;
   "x-ray")
     BGPNEIGHBOR=""
-    DAEMON="quagga"
+    DAEMON="bird"
     ;;
   "yankee")
     BGPNEIGHBOR="80.231.79.69"
